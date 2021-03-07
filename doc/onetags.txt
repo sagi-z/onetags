@@ -1,0 +1,157 @@
+*onetags.txt*  Onetags to rule them all - with auto per project tags.
+  
+Description~
+
+This plugin maintains a tags file for ctag supported file types.
+Each file is assigned a tags file depending on its project and file type.
+Only file types which are supported by ctags have their local tags set for
+them.
+
+
+Contents~
+
+* Dependencies.....................(|onetags-dependencies|)
+* Project detection................(|onetags-project-detection|)
+* Tags per file type...............(|onetags-file-type|)
+* Automatic ctags..................(|onetags-automatic-tags|)
+* External source..................(|onetags-external-source|)
+* Commands.........................(|onetags-commands|)
+* Settings.........................(|onetags-settings|)
+* Per project settings.............(|onetags-project-settings|)
+* Example setting..................(|onetags-example-setting|)
+* License..........................(|onetags-license|)
+
+
+Dependencies~
+                                                          *onetags-dependencies*
+
+1. fd - see https://github.com/sharkdp/fd
+2. ctags - see http://ctags.sourceforge.net/
+
+
+
+Project detection~
+                                                     *onetags-project-detection*
+
+By default there is a single one tags file per project. The projects are
+detected automatically.
+
+The plugin tries to assign a 'proj_dir' per file in this order:
+1. Check for marker files (|onetags-marker-files|) in parent directories.
+2. If file is under the global working directory (from where you started vim),
+then this global working directory is the 'proj_dir'.
+
+If both options fail then it doesn't manage tags for that file.
+
+
+Tags per file type~
+                                                             *onetags-file-type*
+
+The local tags file is automatically set only for file types which ctags
+supports. Projects with multiple file types will have a tags file per file
+type.
+
+
+Automatic ctags~
+                                                        *onetags-automatic-tags*
+
+For file types in recognized projects this plugin will update the tags file
+automatiaclly on file saves.
+
+At this point (minus some optimizations) ctags will executed for the file type
+of this project dir. It will be executed for all the files which are returned
+by 'fd' (|onetags-dependencies|).  This ensures that all the files of the
+project without git and not ignored by '.gitignore' will be parsed.
+
+Ctags will be invoked with a specific language specification to ignore files
+not related to the current file language.
+
+
+External source~
+                                                       *onetags-external-source*
+
+By default you can have only one special tags file per source, managed by this
+plugin (local 'tags' and 'TAGS' are added as well).
+
+What about python sources in your virtualenv? External include files for C++?
+it can be very useful to be able to navigate to external sources at times.
+
+For this you have to use a project configuration json file in your project
+directory. This both serves as a marker file (|onetags-marker-files|) and a
+way to safely configure this plugin without the security risk of sourcing
+potentially exploiting code into vim.
+
+External (shared) tag files for a 'proj_dir' can be created by you manually or
+by this plugin in 2 different ways:
+
+1. Add an "external_tags" to the file-type section in a '.onetags.json' file
+of a project (example below). This is a list of full path of files you create
+manually and want to be added to the 'tags' of this project.
+
+2. Add an "managed_external_tags" to the file-type section in a '.onetags.json'
+file of a project (example below). This is a dictionary of logical names and
+folders that |onetags| will create a tag file for on demand.
+
+Examples:~
+========
+
+* Generate yourself the tags:
+>
+	# This is a python example, assuming a project in ~/myproj, having your tags
+	# in ~/.vim/tags
+
+	# 1. Generate you external tags file yourself:
+	bash-prompt$ ctags -f ~/.vim/tags/external_tags.python.myproj.tags \
+               --languages=python \
+               $(fd --search-path $VIRTUAL_ENV/lib -a -t f -e py)
+
+	# 2.  Make sure you update the '.onetags.json' marker file:
+	bash-prompt$ cat ~/myproj/.onetags.json
+	{
+			"python": {
+					"external_tags": ["~/.vim/tags/external_tags.python.myproj.tags"]
+			}
+	}
+
+<
+* Let |onetags| generate external tags for you:
+>
+	# This is a python example, assuming a project in ~/myproj, having your tags
+	# in ~/.vim/tags
+
+	# 1.  Make sure you update the '.onetags.json' marker file:
+	bash-prompt$ cat ~/myproj/.onetags.json
+	{
+			"python": {
+					"managed_external_tags": {"venv_myproj": "$VIRTUAL_ENV/lib"}
+			}
+	}
+
+	" When you want to create/update the external tags file use
+	" :OnetagsGenExternal [proj_dir]
+<
+See also |onetags-OnetagsGenExternal|.
+
+Commands~
+                                                              *onetags-commands*
+
+These commands are available to you:
+>
+TBD
+
+Settings~
+                                                              *onetags-settings*
+
+Example setting~
+                                                       *onetags-example-setting*
+
+TBD
+
+License~
+                                                               *onetags-license*
+
+MIT
+
+
+==============================================================================
+vim:tw=78:sw=2:ts=2:ft=help:norl:
