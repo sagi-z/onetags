@@ -2,7 +2,6 @@
 " Maintainer:	Sagi Zeevi <sagi.zeevi@gmail.com>
 " License:      MIT
 
-
 if exists("g:loaded_onetags")
     finish
 endif
@@ -20,16 +19,16 @@ endfunction
 
 
 " Holds a mapping of files/directories to a project directory
-let s:proj_dir = {}
+let s:proj_dir = {'_data': {}}
 
 " Holds information for project directories - gathered automatically and from config
-let s:projs_cfg = {}
+let s:projs_cfg = {'_data': {}}
 
 " Holds a generated prefix of files/directories per project
-let s:tags_prefix = {}
+let s:tags_prefix = {'_data' :{}}
 
 " Holds a job per project directory
-let s:jobs = {}
+let s:jobs = {'_data': {}}
 
 " make sure we have where to put the tag files
 silent call mkdir(fnamemodify(g:onetags#tags_dir, ':p'), 'p')
@@ -52,6 +51,8 @@ function! s:Filetype(ft='', throw=1)
 endfunction
 
 
+" First try to see if we're already mapped.
+" Second, try to find a detected proj_cfg that mentions a parent dir of ours as an external source.
 " Try to get the project dir for a file according to markers in self/parent directories.
 " If that fails and it is under the global getcwd then that global getcwd is
 " the project dir.
@@ -65,28 +66,42 @@ function! s:proj_dir.entry(file_dir='')
         let file_dir = fnamemodify(file_dir, '%:p:h')
     endif
     if g:onetags#debug_on | call s:Dbg('proj_dir.entry called for ' . file_dir) | endif
-    if ! has_key(self, file_dir)
-        let proj_dir = file_dir
-        while proj_dir != $HOME && proj_dir != '/'
-            for marker in g:onetags#project_markers
-                if filereadable(proj_dir . '/' . marker)
-                    break
-                endif
-            endfor
-            let proj_dir = fnamemodify(proj_dir , ":h")
-        endwhile
-        if proj_dir == $HOME || proj_dir == '/'
-            let global_proj_dir = getcwd(-1)
-            if stridx(file_dir, global_proj_dir) == 0
-                let proj_dir = global_proj_dir
-            else
-                throw 'No project detected for ' . file_dir
-            endif
-        endif
-        let self[file_dir] = proj_dir
+
+    " Check for a cached result
+    if has_key(self._data, file_dir)
+        if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' is ' . self._data[file_dir]) | endif
+        return self._data[file_dir]
     endif
-    if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' is ' . self[file_dir]) | endif
-    return self[file_dir]
+
+    " Check if this is an external source
+    let proj_dir = s:projs_cfg.proj_of_external_source(file_dir)
+    if proj_dir isnot v:none
+        let self._data[file_dir] = proj_dir
+        if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' is ' . proj_dir) | endif
+        return proj_dir
+    endif
+
+    " Check for markers or global CWD
+    let proj_dir = file_dir
+    while proj_dir != $HOME && proj_dir != '/'
+        for marker in g:onetags#project_markers
+            if filereadable(proj_dir . '/' . marker)
+                break
+            endif
+        endfor
+        let proj_dir = fnamemodify(proj_dir , ":h")
+    endwhile
+    if proj_dir == $HOME || proj_dir == '/'
+        let global_proj_dir = getcwd(-1)
+        if stridx(file_dir, global_proj_dir) == 0
+            let proj_dir = global_proj_dir
+        else
+            throw 'No project detected for ' . file_dir
+        endif
+    endif
+    let self._data[file_dir] = proj_dir
+    if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' is ' . proj_dir) | endif
+    return proj_dir
 endfunction
 
 
@@ -96,12 +111,12 @@ function! s:proj_dir.is_managed(file='')
     else
         let file = fnamemodify(a:file, '%:p:h')
     endif
-    return has_key(self, file)
+    return has_key(self._data, file)
 endfunction
 
 
 function! s:projs_cfg.entry(proj_dir)
-    if ! has_key(self, a:proj_dir)
+    if ! has_key(self._data, a:proj_dir)
         let cfg = a:proj_dir . '/.onetags.json'
         if filereadable(cfg)
             if executable('cat')
@@ -140,9 +155,9 @@ function! s:projs_cfg.entry(proj_dir)
         else
             let entry = {}
         endif
-        let self[a:proj_dir] = entry
+        let self._data[a:proj_dir] = entry
     endif
-    return self[a:proj_dir]
+    return self._data[a:proj_dir]
 endfunction
 
 
@@ -190,12 +205,30 @@ function! s:projs_cfg.ft_entry(proj_dir='', ft='')
 endfunction
 
 
+function! s:projs_cfg.proj_of_external_source(file_dir)
+    if g:onetags#debug_on | call s:Dbg('proj_of_external_source, search:' . a:file_dir . ' in ' . string(self._data)) | endif
+    for [proj_dir, entry] in items(self._data)
+        if g:onetags#debug_on | call s:Dbg('proj_of_external_source, check entry:' . string(entry)) | endif
+        for [ft, ft_entry] in items(entry)
+            if has_key(ft_entry, 'managed_external_tags')
+                for [tagsfile, ext_src_dir] in items(ft_entry.managed_external_tags)
+                    if stridx(a:file_dir, expand(ext_src_dir)) == 0
+                        return proj_dir
+                    endif
+                endfor
+            endif
+        endfor
+    endfor
+    return v:none
+endfunction
+
+
 function! s:jobs.proj_entry(file_dir='')
     let proj_dir = s:proj_dir.entry(a:file_dir)
-    if ! has_key(self, proj_dir)
-        let self[proj_dir] = {}
+    if ! has_key(self._data, proj_dir)
+        let self._data[proj_dir] = {}
     endif
-    return self[proj_dir]
+    return self._data[proj_dir]
 endfunction
 
 function! s:jobs.ft_entry(ft='', file_dir='')
@@ -210,11 +243,11 @@ endfunction
 
 function! s:tags_prefix.entry()
     let file_dir = expand('%:p:h')
-    if ! has_key(self, file_dir)
+    if ! has_key(self._data, file_dir)
         let proj_dir = s:proj_dir.entry(file_dir)
-        let self[file_dir] = substitute(proj_dir, '\/', '.', 'g')
+        let self._data[file_dir] = substitute(proj_dir, '\/', '.', 'g')
     endif
-    return self[file_dir]
+    return self._data[file_dir]
 endfunction
 
 
