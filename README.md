@@ -1,57 +1,27 @@
-# oonav - Object Oriented Navigation for vim
+# Onetags - vim tag files management
 
 ## Description
 
-* Navigate to method implementations in derived classes.
-* Navigate to method in parent class.
-* Use [fzf] - optional.
-* Using tags, preferably for the entire project (keeping an updated tags for the
-  project should be done manually or with another plugin).
+This plugin maintains a tags file for ctags supported file types.
+Each file is assigned a tags file depending on its project and file type.
+Only file types which are supported by ctags have their local tags set for
+them.
 
-![Naviagate to derived](nav.gif "Navigate to derived")
+## Dependencies
 
-## Note
-
-Without tags for the entire project this plugin has very little benefit.
+1. [fd](https://github.com/sharkdp/fd).
+2. [ctags](http://ctags.sourceforge.net/).
 
 ## Install
 
-`Plug 'sagi-z/oonav'`
+`Plug 'sagi-z/onetags'`
 
-## Configuration
+## Help
 
-```vim
-" To disable default mappings creation use:
-let g:oonav#create_mappings = 0
+This plugin simply works out of the box.
 
-" If you don't want to allow fzf change the value to 0. The default is 1.
-let g:oonav#allow_fzf = 1
-
-" If you want to allow fzf without preview change the value to 0. The default
-" is 1.
-let g:oonav#allow_fzf_preview = 1
-
-" oonav fzf tag preview is using perl. If 'perl' is not in your path the you can
-" specify the full path here.
-" The default is to use 'perl' from your PATH.
-let g:oonav#perl = 'perl'
-```
-
-## Usage
-
-These mappings are created by default:
-
-```vim
-"Goto derived (down the class hierarchy)
-map <unique> <Leader>gd  <Plug>(oonav-down)
-
-"Goto base (up the class hierarchy)
-map <unique> <Leader>gb  <Plug>(oonav-up)
-```
+For tweaking see [:help onetags](docs/onetags.txt)
 
 ## License
 
 MIT
-
-[fzf]:   https://github.com/junegunn/fzf.vim
-

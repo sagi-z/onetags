@@ -1,4 +1,4 @@
-" Last Change:	2021 March 03
+" Last Change:	2021 March 08
 " Maintainer:	Sagi Zeevi <sagi.zeevi@gmail.com>
 " License:      MIT
 
@@ -44,7 +44,7 @@ function! s:Filetype(ft='', throw=1)
         if a:throw
             throw 'Unsupported filetype "' . ft . '" for file '. expand('%:p')
         else
-            let fg = ''
+            let ft = ''
         endif
     endif
     return ft
@@ -56,6 +56,7 @@ endfunction
 " Try to get the project dir for a file according to markers in self/parent directories.
 " If that fails and it is under the global getcwd then that global getcwd is
 " the project dir.
+" Finally, the current directory can have a config file with external source to the 'file_dir'.
 " Otherwise we don't handle this file/dir.
 function! s:proj_dir.entry(file_dir='')
     let file_dir = a:file_dir
@@ -95,13 +96,24 @@ function! s:proj_dir.entry(file_dir='')
         let global_proj_dir = getcwd(-1)
         if stridx(file_dir, global_proj_dir) == 0
             let proj_dir = global_proj_dir
+        elseif ! empty(s:projs_cfg.entry(global_proj_dir))
+            " Is this file_dir an external source of a project file in CWD?
+            let proj_dir = s:projs_cfg.proj_of_external_source(file_dir)
         else
-            throw 'No project detected for ' . file_dir
+            let proj_dir = v:none
         endif
+    endif
+    if proj_dir is v:none
+        throw 'No project detected for ' . file_dir
     endif
     let self._data[file_dir] = proj_dir
     if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' is ' . proj_dir) | endif
     return proj_dir
+endfunction
+
+
+function! s:projs_cfg.remove(proj_dir)
+    unlet self._data[a:proj_dir]
 endfunction
 
 
@@ -162,8 +174,9 @@ endfunction
 
 
 " Not disabled per project unless specified in project config file
-function! s:projs_cfg.autobuild_disabled(proj_dir)
-    let cfg_entry = self.entry(a:proj_dir)
+function! s:projs_cfg.autobuild_disabled(proj_dir, ft)
+    let cfg_entry = self.ft_entry(a:proj_dir, a:ft)
+    if g:onetags#debug_on | call s:Dbg('autobuild_disabled: entry: ' . string(cfg_entry)) | endif
     if has_key(cfg_entry, 'autobuild_disabled')
        return cfg_entry['autobuild_disabled']
    else
@@ -367,7 +380,7 @@ function! s:ProjSettings(proj_dir='')
         if ft != '' && ! filereadable(proj_file)
             call setline(line('$'), '{')
             call append(line('$'), '    "' . ft . '": {')
-            call append(line('$'), '        "autobuild_disabled": 0,')
+            call append(line('$'), '        "autobuild_disabled": false,')
             call append(line('$'), '        "external_tags": [')
             if has_key(g:onetags#external_tags_defaults, ft)
                 for k in g:onetags#external_tags_defaults[ft]
@@ -412,15 +425,16 @@ endfunction
 
 function! s:ProjReload(proj_dir='')
     let proj_dir = s:proj_dir.entry(a:proj_dir)
-    unlet s:projs_cfg[proj_dir]
+    call s:projs_cfg.remove(proj_dir)
     call s:SetTags()
 endfunction
 
 
 function! s:HandleWritePost()
-    if g:onetags#autobuild && s:Filetype('', 0) != '' && s:proj_dir.is_managed()
+    let ft = s:Filetype('', 0)
+    if g:onetags#autobuild && ft != '' && s:proj_dir.is_managed()
         let proj_dir = s:proj_dir.entry()
-        if ! s:projs_cfg.autobuild_disabled(proj_dir)
+        if ! s:projs_cfg.autobuild_disabled(proj_dir, ft)
             let ft_entry = s:jobs.ft_entry()
             let ft_entry.waiting = 1
         endif
@@ -429,9 +443,10 @@ endfunction
 
 
 function! s:CheckPendingUpdate()
-    if g:onetags#autobuild && s:Filetype('', 0) != '' && s:proj_dir.is_managed()
+    let ft = s:Filetype('', 0)
+    if g:onetags#autobuild && ft != '' && s:proj_dir.is_managed()
         let proj_dir = s:proj_dir.entry()
-        if ! s:projs_cfg.autobuild_disabled(proj_dir)
+        if ! s:projs_cfg.autobuild_disabled(proj_dir, ft)
             let ft_entry = s:jobs.ft_entry()
             if ft_entry.waiting
                 call s:RefreshProjTags()
