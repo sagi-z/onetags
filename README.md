@@ -20,7 +20,7 @@ them.
 
 This plugin simply works out of the box.
 
-For tweaking see [:help onetags](docs/onetags.txt)
+For tweaking see [:help onetags](doc/onetags.txt)
 
 ## License
 
