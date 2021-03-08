@@ -25,7 +25,7 @@ Contents~
 
 =============================================================================
 Dependencies~
-														*onetags-dependencies*
+                            *onetags-dependencies*
 
 1. fd - see https://github.com/sharkdp/fd .
 2. ctags - see http://ctags.sourceforge.net/ .
@@ -34,7 +34,7 @@ Dependencies~
 
 =============================================================================
 Project detection~
-												 *onetags-project-detection*
+                         *onetags-project-detection*
 
 By default there is a single one tags file per project. The projects are
 detected automatically.
@@ -49,7 +49,7 @@ If both options fail then it doesn't manage tags for that file.
 
 =============================================================================
 Tags per file type~
-															*onetags-filetype*
+                              *onetags-filetype*
 
 The local tags file is automatically set only for file types which ctags
 supports. Projects with multiple file types will have a tags file per file
@@ -58,7 +58,7 @@ type.
 
 =============================================================================
 Automatic ctags~
-													 *onetags-automatic-tags*
+                           *onetags-automatic-tags*
 
 For file types in recognized projects this plugin will update the tags file
 automatiaclly on file saves.
@@ -76,7 +76,7 @@ See also |:OnetagsRebuild|, |g:onetags#autobuild|, |onetags-project-settings|.
 
 =============================================================================
 External source~
-													*onetags-external-source*
+                          *onetags-external-source*
 
 By default you can have only one special tags file per source, managed by this
 plugin (local "tags" and "TAGS" are added as well).
@@ -107,114 +107,114 @@ Examples:~
 
 * Generate yourself the tags:
 >
-	# This is a python example, assuming a project in ~/myproj, having your tags
-	# in ~/.vim/tags
+  # This is a python example, assuming a project in ~/myproj, having your tags
+  # in ~/.vim/tags
 
-	# 1. Generate you external tags file yourself:
-	bash-prompt$ ctags -f ~/.vim/tags/external_tags.python.myproj.tags \
+  # 1. Generate you external tags file yourself:
+  bash-prompt$ ctags -f ~/.vim/tags/external_tags.python.myproj.tags \
                --languages=python \
                $(fd --search-path $VIRTUAL_ENV/lib -a -t f -e py)
 
-	# 2.  Make sure you update the '.onetags.json' marker file:
-	bash-prompt$ cat ~/myproj/.onetags.json
-	{
-			"python": {
-					"external_tags": ["~/.vim/tags/external_tags.python.myproj.tags"]
-			}
-	}
+  # 2.  Make sure you update the '.onetags.json' marker file:
+  bash-prompt$ cat ~/myproj/.onetags.json
+  {
+      "python": {
+          "external_tags": ["~/.vim/tags/external_tags.python.myproj.tags"]
+      }
+  }
 
 <
 * Let |onetags| generate external tags for you:
 >
-	# This is a python example, assuming a project in ~/myproj, having your tags
-	# in ~/.vim/tags
+  # This is a python example, assuming a project in ~/myproj, having your tags
+  # in ~/.vim/tags
 
-	# 1.  Make sure you update the '.onetags.json' marker file:
-	bash-prompt$ cat ~/myproj/.onetags.json
-	{
-			"python": {
-					"managed_external_tags": {"venv_{proj}": "$VIRTUAL_ENV/lib"}
-			}
-	}
+  # 1.  Make sure you update the '.onetags.json' marker file:
+  bash-prompt$ cat ~/myproj/.onetags.json
+  {
+      "python": {
+          "managed_external_tags": {"venv_{proj}": "$VIRTUAL_ENV/lib"}
+      }
+  }
 
-	" When you want to create/update the external tags file use
-	" :OnetagsRebuildExternal [FileType] [ProjDir]
+  " When you want to create/update the external tags file use
+  " :OnetagsRebuildExternal [FileType] [ProjDir]
 <
 See also |:OnetagsRebuildExternal|.
 
 =============================================================================
 Commands~
-															*onetags-commands*
+                              *onetags-commands*
 
 These commands are available:
 
-															*:OnetagsRebuild*
-:OnetagsRebuild [Filetype] [ProjDir] 	will force rebuild the tags for
-					{Filetype} in {ProjDir}. The default {Filetype} is the 'filetype' of
-					the current file (|onetags-filetype|). The default {ProjDir} is the
-					project directory of the current file (|onetags-project-detection|).
-					See also |onetags-automatic-tags|.
+                              *:OnetagsRebuild*
+:OnetagsRebuild [Filetype] [ProjDir]  will force rebuild the tags for
+          {Filetype} in {ProjDir}. The default {Filetype} is the 'filetype' of
+          the current file (|onetags-filetype|). The default {ProjDir} is the
+          project directory of the current file (|onetags-project-detection|).
+          See also |onetags-automatic-tags|.
 
-													*:OnetagsRebuildExternal*
-:OnetagsRebuildExternal [Filetype] [ProjDir] 	will rebuild the external tags
-					{Filetype} in {ProjDir}. The default {Filetype} is
-					the 'filetype' of the current file (|onetags-filetype|). The default
-					{ProjDir} is the project directory of the current file
-					(|onetags-project-detection|).  See also |onetags-external-source|.
+                          *:OnetagsRebuildExternal*
+:OnetagsRebuildExternal [Filetype] [ProjDir]  will rebuild the external tags
+          {Filetype} in {ProjDir}. The default {Filetype} is
+          the 'filetype' of the current file (|onetags-filetype|). The default
+          {ProjDir} is the project directory of the current file
+          (|onetags-project-detection|).  See also |onetags-external-source|.
 
-															*:OnetagsProjCfg*
-:OnetagsProjCfg [ProjDir] 	will open/create the file ".onetags.json" in the 
-					{ProjDir}.The default {ProjDir} is the project directory
-					of the current file (|onetags-project-detection|).  See also
-					|onetags-external-source|. In this json file the is an optional
-					dictionary per 'filetype' with these optional attributes:
-					"autobuild_disabled" (boolean), "external_tags" (list of strings),
-					"managed_external_tags" (dictionary which maps logical names to
-					directories).
+                              *:OnetagsProjCfg*
+:OnetagsProjCfg [ProjDir]   will open/create the file ".onetags.json" in the 
+          {ProjDir}.The default {ProjDir} is the project directory
+          of the current file (|onetags-project-detection|).  See also
+          |onetags-external-source|. In this json file the is an optional
+          dictionary per 'filetype' with these optional attributes:
+          "autobuild_disabled" (boolean), "external_tags" (list of strings),
+          "managed_external_tags" (dictionary which maps logical names to
+          directories).
 
-					If the project configuration file does not exist then it will be
-					created, based on defaults from
-					|g:onetags#managed_external_tags_defaults|.
+          If the project configuration file does not exist then it will be
+          created, based on defaults from
+          |g:onetags#managed_external_tags_defaults|.
 
-					Here is an example of how it is created if the detected 'filetype'
-					is python:
+          Here is an example of how it is created if the detected 'filetype'
+          is python:
 >
-						{
-							"python": {
-									"autobuild_disabled": false,
-									"external_tags": [
-									],
-									"managed_external_tags": {
-											"venv_{proj}": "$VIRTUAL_ENV/lib"
-									}
-							}
-					 }
+            {
+              "python": {
+                  "autobuild_disabled": false,
+                  "external_tags": [
+                  ],
+                  "managed_external_tags": {
+                      "venv_{proj}": "$VIRTUAL_ENV/lib"
+                  }
+              }
+           }
 <
-					Here is an example of how it is created if the detected 'filetype'
-					is c, on an OS with "/ust/include":
+          Here is an example of how it is created if the detected 'filetype'
+          is c, on an OS with "/ust/include":
 >
-						{
-							"c": {
-									"autobuild_disabled": false,
-									"external_tags": [
-									],
-									"managed_external_tags": {
-											"usr_include": "/usr/include"
-									}
-							}
-					 }
+            {
+              "c": {
+                  "autobuild_disabled": false,
+                  "external_tags": [
+                  ],
+                  "managed_external_tags": {
+                      "usr_include": "/usr/include"
+                  }
+              }
+           }
 <
 
-															*:OnetagsProjReload*
-:OnetagsProjReload [ProjDir] 	will rload the file ".onetags.json" in the 
-					{ProjDir}.The default {ProjDir} is the project directory of the
-					current file (|onetags-project-detection|). Use this to make the
-					changes you've made during |OnetagsProjCfg| take affect.
+                              *:OnetagsProjReload*
+:OnetagsProjReload [ProjDir]  will rload the file ".onetags.json" in the 
+          {ProjDir}.The default {ProjDir} is the project directory of the
+          current file (|onetags-project-detection|). Use this to make the
+          changes you've made during |OnetagsProjCfg| take affect.
 
 
 =============================================================================
 Settings~
-														*onetags-vim-settings*
+                            *onetags-vim-settings*
 
 This plugin works automatiaclly out of the box. It detects the logical project
 a file belongs to, creates tag files automatiaclly and updates them when
@@ -224,60 +224,60 @@ the background.
 You can tweak its automatic behavior with these settings in your .vimrc:
 
 
-														 *g:onetags#tags_dir*
+                             *g:onetags#tags_dir*
 Where to put all the generated tag files.
 >
-	let g:onetags#tags_dir = '~/.vim/tags'
+  let g:onetags#tags_dir = '~/.vim/tags'
 <
 
 
-														*g:onetags#autobuild*
+                            *g:onetags#autobuild*
 To disable automatic build of tag files on save use this:
 >
-	let g:onetags#autobuild = 0
+  let g:onetags#autobuild = 0
 <
 
 
-												 *g:onetags#project_markers*
+                         *g:onetags#project_markers*
 Automatic detection of project directory relies heavily on detection
 of certain files. The current list is this:
 >
-	let g:onetags#project_markers = [ '.onetags.json', '.git', 'setup.py', 
-							\'Makefile', 'CMakeLists.txt' ]
+  let g:onetags#project_markers = [ '.onetags.json', '.git', 'setup.py', 
+              \'Makefile', 'CMakeLists.txt' ]
 
 Either replace the list above or add to it with:
 >
-	call add(g:onetags#project_markers, 'my_proj_file')
+  call add(g:onetags#project_markers, 'my_proj_file')
 <
 
-											*g:onetags#external_tags_defaults*
+                      *g:onetags#external_tags_defaults*
 During automatic project configuration creation with |:OnetagsProjCfg|, this
 variable is used to add files to the 'tags' list, in addition to the automatic
 ones of the project. These tag files are created by you. This is done by file
 type and it is empty by default:
 >
-	let g:onetags#external_tags_defaults = {}
+  let g:onetags#external_tags_defaults = {}
 <
 You can add to it per file type, as in:
 >
-	let g:onetags#external_tags_defaults["cpp"] = "~/.vim/tags/external_tags.cpp.tags"
+  let g:onetags#external_tags_defaults["cpp"] = "~/.vim/tags/external_tags.cpp.tags"
 <
 
-									*g:onetags#managed_external_tags_defaults*
+                  *g:onetags#managed_external_tags_defaults*
 During automatic project configuration creation with |:OnetagsProjCfg|, this
 variable is used to add files to the 'tags' list, in addition to the automatic
 ones of the project. These tag files can be created/refreshed on demand from
 this plugin at runtime. This is done by file type, and currently configured
 like this:
 >
-	let g:onetags#managed_external_tags_defaults = {}
+  let g:onetags#managed_external_tags_defaults = {}
 
   " Some factory defaults
-	let g:onetags#managed_external_tags_defaults["python"] = {"venv_{proj}": "$VIRTUAL_ENV/lib"}
-	if isdirectory('/usr/include')
-			let g:onetags#managed_external_tags_defaults["cpp"] = {"usr_include": "/usr/include"}
-			let g:onetags#managed_external_tags_defaults["c"] = {"usr_include": "/usr/include"}
-	endif
+  let g:onetags#managed_external_tags_defaults["python"] = {"venv_{proj}": "$VIRTUAL_ENV/lib"}
+  if isdirectory('/usr/include')
+      let g:onetags#managed_external_tags_defaults["cpp"] = {"usr_include": "/usr/include"}
+      let g:onetags#managed_external_tags_defaults["c"] = {"usr_include": "/usr/include"}
+  endif
 <
 Notice you can use {proj} in the logical name of the tag, and environment
 variables in the directory which is scanned for source files when creating the
@@ -287,17 +287,17 @@ See also |onetags-external-source| ,|:OnetagsRebuildExternal|, |:OnetagsProjCfg|
 
 =============================================================================
 Alternatives~
-															*onetags-alternatives*
+                              *onetags-alternatives*
 
 The best alternative to this plugin is {Gutentags} from 
 https://github.com/ludovicchabant/vim-gutentags . 
 
 =============================================================================
 License~
-															*onetags-license*
+                              *onetags-license*
 
 MIT
 
 
 ==============================================================================
-vim:tw=78:sw=2:ts=2:ft=help:norl:
+vim:tw=78:sw=2:ts=2:ft=help:norl:expandtab
