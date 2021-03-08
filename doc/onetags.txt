@@ -40,7 +40,7 @@ By default there is a single one tags file per project. The projects are
 detected automatically.
 
 The plugin tries to assign a 'proj_dir' per file in this order:
-1. Check for marker files (|onetags-marker-files|) in parent directories.
+1. Check for marker files (|g:onetags#project_markers|) in parent directories.
 2. If file is under the global working directory (from where you started vim),
 then this global working directory is the 'proj_dir'.
 
@@ -85,7 +85,7 @@ What about python sources in your virtualenv? External include files for C++?
 it can be very useful to be able to navigate to external sources at times.
 
 For this you have to use a project configuration json file in your project
-directory. This both serves as a marker file (|onetags-marker-files|) and a
+directory. This both serves as a marker file (|g:onetags#project_markers|) and a
 way to safely configure this plugin without the security risk of sourcing
 potentially exploiting code into vim.
 
@@ -283,7 +283,7 @@ Notice you can use {proj} in the logical name of the tag, and environment
 variables in the directory which is scanned for source files when creating the
 tags.
 
-See also |onetags-external-source|,|:OnetagsRebuildExternal|, |:OnetagsProjCfg|.
+See also |onetags-external-source| ,|:OnetagsRebuildExternal|, |:OnetagsProjCfg|.
 
 =============================================================================
 Alternatives~
