@@ -1,4 +1,4 @@
-" Last Change:	2021 March 08
+" Last Change:	2021 March 21
 " Maintainer:	Sagi Zeevi <sagi.zeevi@gmail.com>
 " License:      MIT
 
@@ -279,12 +279,12 @@ function! s:TagsfileTmp(tagsfile)
 endfunction
 
 
-function! s:CtagsProjCommand(ft, tagsfile)
+function! s:CtagsProjCommand(ft, tagsfile, proj_dir)
     if g:onetags#debug_on | call s:Dbg("CtagsProjCommand") | endif
     if ! executable('fd')
        throw 'Please install fd (https://github.com/sharkdp/fd).'
     endif
-    let srcs = join(systemlist("fd --search-path '" . s:proj_dir.entry() . "' -a -t f"), ' ')
+    let srcs = join(systemlist("fd --search-path '" . s:proj_dir.entry(a:proj_dir) . "' -a -t f"), ' ')
     if v:shell_error != 0
         throw srcs
     endif
@@ -341,7 +341,7 @@ function! s:RefreshProjTags(ft='', proj_dir='')
     endif
     let tagsfile = s:Tagsfile()
     let tmp_tagsfile = s:TagsfileTmp(tagsfile)
-    let cmd = s:CtagsProjCommand(ft, tmp_tagsfile)
+    let cmd = s:CtagsProjCommand(ft, tmp_tagsfile, proj_dir)
     let ft_entry.job = job_start(cmd, {"exit_cb": funcref("<SID>RefreshProjTagsDone", [ft, proj_dir, tmp_tagsfile, tagsfile])})
 endfunction
 
