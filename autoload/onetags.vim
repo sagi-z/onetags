@@ -1,8 +1,9 @@
-
 let g:onetags#debug_on = 0
 let g:onetags#tags_dir = '~/.vim/tags'
 let g:onetags#autobuild = 1
-let g:onetags#project_markers = [ '.onetags.json', '.git', 'setup.py', 'Makefile', 'CMakeLists.txt' ]
+let g:onetags#project_markers = [ '.onetags.json', '.git', 'setup.py',
+            \ 'Makefile', 'CMakeLists.txt', 'pom.xml', '.projections.json',
+            \ '.ycm_extra_conf.py' ]
 let g:onetags#ft2ctags = {
             \ 'ant': 'Ant',
             \ 'awk': 'Awk',

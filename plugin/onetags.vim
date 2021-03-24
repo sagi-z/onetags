@@ -195,7 +195,7 @@ function! s:projs_cfg.ft_entry(proj_dir='', ft='')
     endif
     " Make sure we have a sane entry even if we read from a file
     if ! has_key(ft_entry, 'tagsfile')
-        let tagsfile = s:Tagsfile(ft)
+        let tagsfile = s:Tagsfile(ft, proj_dir)
         let ft_entry['tagsfile'] = tagsfile
     endif
     if ! has_key(ft_entry, 'external_tags')
@@ -254,8 +254,12 @@ function! s:jobs.ft_entry(ft='', file_dir='')
 endfunction
 
 
-function! s:tags_prefix.entry()
-    let file_dir = expand('%:p:h')
+function! s:tags_prefix.entry(proj_dir)
+    if empty(a:proj_dir)
+        let file_dir = expand('%:p:h')
+    else
+        let file_dir = a:proj_dir
+    endif
     if ! has_key(self._data, file_dir)
         let proj_dir = s:proj_dir.entry(file_dir)
         let self._data[file_dir] = substitute(proj_dir, '\/', '.', 'g')
@@ -264,13 +268,13 @@ function! s:tags_prefix.entry()
 endfunction
 
 
-function! s:Tagsfile(ft='')
+function! s:Tagsfile(ft='', proj_dir='')
     try
         let ft = s:Filetype(a:ft)
     catch /.*/
         return ''
     endtry
-    return fnamemodify(g:onetags#tags_dir, ':p:h') . '/' . ft . s:tags_prefix.entry() . '.tags'
+    return fnamemodify(g:onetags#tags_dir, ':p:h') . '/' . ft . s:tags_prefix.entry(a:proj_dir) . '.tags'
 endfunction
 
 
@@ -333,13 +337,13 @@ function! s:RefreshProjTags(ft='', proj_dir='')
     if g:onetags#debug_on | call s:Dbg('RefreshProjTags invoked.') | endif
     let ft = s:Filetype(a:ft)
     let proj_dir = s:proj_dir.entry(a:proj_dir)
-    let ft_entry = s:jobs.ft_entry(a:ft, a:proj_dir)
+    let ft_entry = s:jobs.ft_entry(a:ft, proj_dir)
     if ft_entry.job isnot v:none
         let ft_entry.waiting = 1
         if g:onetags#debug_on | call s:Dbg('Another ctags is running for this filetype, will rerun automatically when it is done.') | endif
         return
     endif
-    let tagsfile = s:Tagsfile()
+    let tagsfile = s:Tagsfile(ft, proj_dir)
     let tmp_tagsfile = s:TagsfileTmp(tagsfile)
     let cmd = s:CtagsProjCommand(ft, tmp_tagsfile, proj_dir)
     let ft_entry.job = job_start(cmd, {"exit_cb": funcref("<SID>RefreshProjTagsDone", [ft, proj_dir, tmp_tagsfile, tagsfile])})
@@ -413,7 +417,7 @@ function! s:SetTags()
         if tags_str != ''
             if g:onetags#debug_on | call s:Dbg('SetTags to ' . tags_str) | endif
             let &l:tags = tags_str
-            if g:onetags#autobuild && ! filereadable(ft_entry.tagsfile)
+            if g:onetags#autobuild && ! filereadable(ft_entry.tagsfile) && filereadable(expand('%:p'))
                 call s:RefreshProjTags()
             endif
         endif
