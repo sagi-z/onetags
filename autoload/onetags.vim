@@ -55,3 +55,9 @@ if isdirectory('/usr/include')
     let g:onetags#managed_external_tags_defaults["cpp"] = {"usr_include": "/usr/include"}
     let g:onetags#managed_external_tags_defaults["c"] = {"usr_include": "/usr/include"}
 endif
+
+function! onetags#warn(msg)
+    echohl WarningMsg | echo "onetags: " . a:msg | echohl None
+endfunction
+
+

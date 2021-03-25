@@ -286,7 +286,10 @@ endfunction
 function! s:CtagsProjCommand(ft, tagsfile, proj_dir)
     if g:onetags#debug_on | call s:Dbg("CtagsProjCommand") | endif
     if ! executable('fd')
-       throw 'Please install fd (https://github.com/sharkdp/fd).'
+       return onetags#warn('Please install fd (https://github.com/sharkdp/fd).')
+    endif
+    if ! executable('ctags')
+       return onetags#warn('Please install ctags')
     endif
     let srcs = join(systemlist("fd --search-path '" . s:proj_dir.entry(a:proj_dir) . "' -a -t f"), ' ')
     if v:shell_error != 0
@@ -301,7 +304,10 @@ endfunction
 function! s:CtagsExternalCommand(ft, tagsfile, directory)
     if g:onetags#debug_on | call s:Dbg("CtagsExternalCommand") | endif
     if ! executable('fd')
-       throw 'Please install fd (https://github.com/sharkdp/fd).'
+       return 'Please install fd (https://github.com/sharkdp/fd).'
+    endif
+    if ! executable('ctags')
+       return onetags#warn('Please install ctags')
     endif
     let tmpfile = tempname()
     let srcs = join(systemlist('fd --search-path "' . a:directory . '" -a -t f > ' . tmpfile), ' ')
@@ -346,7 +352,9 @@ function! s:RefreshProjTags(ft='', proj_dir='')
     let tagsfile = s:Tagsfile(ft, proj_dir)
     let tmp_tagsfile = s:TagsfileTmp(tagsfile)
     let cmd = s:CtagsProjCommand(ft, tmp_tagsfile, proj_dir)
-    let ft_entry.job = job_start(cmd, {"exit_cb": funcref("<SID>RefreshProjTagsDone", [ft, proj_dir, tmp_tagsfile, tagsfile])})
+    if ! empty(cmd)
+        let ft_entry.job = job_start(cmd, {"exit_cb": funcref("<SID>RefreshProjTagsDone", [ft, proj_dir, tmp_tagsfile, tagsfile])})
+    endif
 endfunction
 
 
@@ -360,6 +368,7 @@ function! s:RefreshExternalTags(ft='', proj_dir='')
     else
         for [tagsfile, directory] in items(cfg_ft_entry.managed_external_tags)
             let cmd = s:CtagsExternalCommand(ft, tagsfile, directory)
+            if empty(cmd) | break | endif  " an error happened
             echo "Start generating " . tagsfile . " for " . directory
             let output = system(cmd)
             if v:shell_error
