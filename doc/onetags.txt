@@ -115,7 +115,7 @@ Examples:~
                --languages=python \
                $(fd --search-path $VIRTUAL_ENV/lib -a -t f -e py)
 
-  # 2.  Make sure you update the '.onetags.json' marker file:
+  # 2.  Make sure you update the '.onetags.json' config file:
   bash-prompt$ cat ~/myproj/.onetags.json
   {
       "python": {
@@ -129,7 +129,7 @@ Examples:~
   # This is a python example, assuming a project in ~/myproj, having your tags
   # in ~/.vim/tags
 
-  # 1.  Make sure you update the '.onetags.json' marker file:
+  # 1.  Make sure you update the '.onetags.json' config file:
   bash-prompt$ cat ~/myproj/.onetags.json
   {
       "python": {
@@ -242,12 +242,14 @@ To disable automatic build of tag files on save use this:
 Automatic detection of project directory relies heavily on detection
 of certain files. The current list is this:
 >
-  let g:onetags#project_markers = [ '.onetags.json', '.git', 'setup.py', 
-              \'Makefile', 'CMakeLists.txt' ]
+  let g:onetags#project_markers = get(g:, "onetags#project_markers",
+              \ [ '.onetags.json', '.git', 'setup.py',
+              \ 'Makefile', 'CMakeLists.txt', 'pom.xml', '.projections.json',
+              \ '.ycm_extra_conf.py', '.root', '.svn', '.project', '.hg'])
 
-Either replace the list above or add to it with:
+Either replace the list above with:
 >
-  call add(g:onetags#project_markers, 'my_proj_file')
+  let g:onetags#project_markers = ['my_proj_file']
 <
 
                       *g:onetags#external_tags_defaults*
@@ -270,7 +272,7 @@ ones of the project. These tag files can be created/refreshed on demand from
 this plugin at runtime. This is done by file type, and currently configured
 like this:
 >
-  let g:onetags#managed_external_tags_defaults = {}
+  let g:onetags#managed_external_tags_defaults = get(g:, "onetags#managed_external_tags_defaults", {})
 
   " Some factory defaults
   let g:onetags#managed_external_tags_defaults["python"] = {"venv_{proj}": "$VIRTUAL_ENV/lib"}
