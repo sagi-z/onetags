@@ -1,4 +1,4 @@
-" Last Change:	2021 March 21
+" Last Change:	2021 April 3rd
 " Maintainer:	Sagi Zeevi <sagi.zeevi@gmail.com>
 " License:      MIT
 
@@ -74,6 +74,12 @@ function! s:proj_dir.entry(file_dir='')
         return self._data[file_dir]
     endif
 
+    for invalid_dir in ['/.git/', '/.hg/', '/.svn/']
+        if stridx(file_dir, invalid_dir) != -1
+            throw 'No project for version control dir ' . file_dir
+        endif
+    endfor
+
     " Check if this is an external source
     let proj_dir = s:projs_cfg.proj_of_external_source(file_dir)
     if proj_dir isnot v:none
@@ -84,12 +90,17 @@ function! s:proj_dir.entry(file_dir='')
 
     " Check for markers or global CWD
     let proj_dir = file_dir
+    let done = 0
     while proj_dir != $HOME && proj_dir != '/'
         for marker in g:onetags#project_markers
-            if filereadable(proj_dir . '/' . marker)
+            let marker_file =  proj_dir . '/' . marker
+            if filereadable(marker_file)
+                if g:onetags#debug_on | call s:Dbg('Found marker ' . marker_file) | endif
+                let done = 1
                 break
             endif
         endfor
+        if done | break | endif
         let proj_dir = fnamemodify(proj_dir , ":h")
     endwhile
     if proj_dir == $HOME || proj_dir == '/'
@@ -360,11 +371,24 @@ endfunction
 
 function! s:RefreshExternalTags(ft='', proj_dir='')
     if g:onetags#debug_on | call s:Dbg('RefreshExternalTags invoked.') | endif
-    let ft = s:Filetype(a:ft)
+    let ft = s:Filetype(a:ft, 0)
     let proj_dir = s:proj_dir.entry(a:proj_dir)
+    if empty(ft)
+        let fts = []
+        for [ft, ft_entry] in items(s:projs_cfg.entry(proj_dir))
+            call add(fts, ft)
+        endfor
+        if len(fts) == 0
+            return onetags#warn("No configuration found for : " . proj_dir . " (try OnetagsProjCfg)")
+        elseif len(fts) == 1
+            let ft = fts[0]
+        else
+            return onetags#warn("Please choose a valid file type to update external tags from: " . string(fts))
+        endif
+    endif
     let cfg_ft_entry = s:projs_cfg.ft_entry(proj_dir, ft)
     if empty(cfg_ft_entry.managed_external_tags)
-        echo "No managed external tags, use :OnetagsProjCfg to add."
+        echo "No managed external tags for " . ft . ", use :OnetagsProjCfg to add."
     else
         for [tagsfile, directory] in items(cfg_ft_entry.managed_external_tags)
             let cmd = s:CtagsExternalCommand(ft, tagsfile, directory)
