@@ -84,7 +84,7 @@ function! s:proj_dir.entry(file_dir='')
     let proj_dir = s:projs_cfg.proj_of_external_source(file_dir)
     if proj_dir isnot v:none
         let self._data[file_dir] = proj_dir
-        if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' is ' . proj_dir) | endif
+        if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' (external source) is ' . proj_dir) | endif
         return proj_dir
     endif
 
@@ -103,14 +103,16 @@ function! s:proj_dir.entry(file_dir='')
         if done | break | endif
         let proj_dir = fnamemodify(proj_dir , ":h")
     endwhile
-    if proj_dir == $HOME || proj_dir == '/'
-        let global_proj_dir = getcwd(-1)
-        if stridx(file_dir, global_proj_dir) == 0
-            let proj_dir = global_proj_dir
-        elseif ! empty(s:projs_cfg.entry(global_proj_dir))
-            " Is this file_dir an external source of a project file in CWD?
-            let proj_dir = s:projs_cfg.proj_of_external_source(file_dir)
+    if done == 0
+        if proj_dir == '/'
+            let global_proj_dir = getcwd(-1)
+            if stridx(file_dir, global_proj_dir) == 0
+                let proj_dir = global_proj_dir
+            else
+                let proj_dir = v:none
+            endif
         else
+            " Never accepting $HOME
             let proj_dir = v:none
         endif
     endif
