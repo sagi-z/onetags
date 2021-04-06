@@ -94,7 +94,8 @@ function! s:proj_dir.entry(file_dir='')
     while proj_dir != $HOME && proj_dir != '/'
         for marker in g:onetags#project_markers
             let marker_file =  proj_dir . '/' . marker
-            if filereadable(marker_file)
+            if g:onetags#debug_on | call s:Dbg('Check marker ' . marker_file) | endif
+            if filereadable(marker_file) || isdirectory(marker_file)
                 if g:onetags#debug_on | call s:Dbg('Found marker ' . marker_file) | endif
                 let done = 1
                 break
