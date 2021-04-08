@@ -151,6 +151,7 @@ function! s:projs_cfg.entry(proj_dir)
                 let cmd = 'type ' . cfg
             endif
             try
+                if g:onetags#debug_on | call s:Dbg('Loading config with ' . cmd) | endif
                 let entry = json_decode(trim(system(cmd)))
                 if g:onetags#debug_on | call s:Dbg('Loaded config for ' . a:proj_dir . ': ' . string(entry)) | endif
                 let evaluated_entry = deepcopy(entry)
@@ -447,7 +448,7 @@ endfunction
 
 function! s:SetTags()
     try
-        if g:onetags#debug_on | call s:Dbg('SetTags called') | endif
+        if g:onetags#debug_on | call s:Dbg('SetTags called for "' . expand("%") . '"') | endif
         let ft_entry = s:projs_cfg.ft_entry()
         let tags_str = ft_entry.tags_str
         if tags_str != ''
@@ -498,7 +499,7 @@ endfunction
 
 augroup onetags
     autocmd!
-    autocmd BufEnter * call <SID>SetTags()
+    autocmd Filetype * call <SID>SetTags()
     autocmd BufWritePost * call <SID>HandleWritePost()
     autocmd BufLeave * call <SID>CheckPendingUpdate()
     autocmd CursorHold * call <SID>CheckPendingUpdate()
