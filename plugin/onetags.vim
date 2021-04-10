@@ -306,12 +306,11 @@ function! s:CtagsProjCommand(ft, tagsfile, proj_dir)
     if ! executable('ctags')
        return onetags#warn('Please install ctags')
     endif
-    let srcs = join(systemlist("fd --search-path '" . s:proj_dir.entry(a:proj_dir) . "' -a -t f"), ' ')
-    if v:shell_error != 0
-        throw srcs
-    endif
-    let cmd = 'ctags -f ' . fnamemodify(a:tagsfile, ":p") . ' --languages=' . g:onetags#ft2ctags[a:ft] . ' ' . srcs
-    if g:onetags#debug_on | call s:Dbg("cmd: " . cmd) | endif
+    let tmpfile = tempname()
+    let fd_cmd = "fd --search-path '" . s:proj_dir.entry(a:proj_dir) . "' -a -t f > " . tmpfile
+    if g:onetags#debug_on | call s:Dbg("CtagsProjCommand, fd_cmd is " . fd_cmd) | endif
+    let cmd = fd_cmd . ' && ctags -f ' . fnamemodify(a:tagsfile, ":p") . ' --languages=' . g:onetags#ft2ctags[a:ft] . ' -L ' . tmpfile
+    if g:onetags#debug_on | call s:Dbg("CtagsProjCommand, cmd: " . cmd) | endif
     return cmd
 endfunction
 
@@ -325,12 +324,10 @@ function! s:CtagsExternalCommand(ft, tagsfile, directory)
        return onetags#warn('Please install ctags')
     endif
     let tmpfile = tempname()
-    let srcs = join(systemlist('fd --search-path "' . a:directory . '" -a -t f > ' . tmpfile), ' ')
-    if v:shell_error != 0
-        throw srcs
-    endif
-    let cmd = 'ctags -f ' . fnamemodify(a:tagsfile, ":p") . ' --languages=' . g:onetags#ft2ctags[a:ft] . ' -L ' . tmpfile
-    if g:onetags#debug_on | call s:Dbg("cmd: " . cmd) | endif
+    let fd_cmd = "fd --search-path '" . expand(a:directory) . "' -a -t f > " . tmpfile
+    if g:onetags#debug_on | call s:Dbg("CtagsExternalCommand, fd_cmd is " . fd_cmd) | endif
+    let cmd = fd_cmd . ' && ctags -f ' . fnamemodify(a:tagsfile, ":p") . ' --languages=' . g:onetags#ft2ctags[a:ft] . ' -L ' . tmpfile
+    if g:onetags#debug_on | call s:Dbg("CtagsExternalCommand, cmd: " . cmd) | endif
     return cmd
 endfunction
 
@@ -340,7 +337,7 @@ function! s:RefreshProjTagsDone(ft, proj_dir, tmp_tagsfile, tagsfile, msg, exitv
     let ft_entry = s:jobs.ft_entry(a:ft, a:proj_dir)
     if a:exitval != 0
         let info = job_info(ft_entry.job)
-        echoerr 'Job "' . string(info.cmd) . '" failed with error "' . job.exitval . '"'
+        echoerr 'Job "' . string(info.cmd) . '" failed with error "' . info.exitval . '"'
         call delete(a:tmp_tagsfile)
     else
         if g:onetags#debug_on | call s:Dbg('rename(' . a:tmp_tagsfile . ', ' . a:tagsfile . ')') | endif
@@ -368,7 +365,8 @@ function! s:RefreshProjTags(ft='', proj_dir='')
     let tmp_tagsfile = s:TagsfileTmp(tagsfile)
     let cmd = s:CtagsProjCommand(ft, tmp_tagsfile, proj_dir)
     if ! empty(cmd)
-        let ft_entry.job = job_start(cmd, {"exit_cb": funcref("<SID>RefreshProjTagsDone", [ft, proj_dir, tmp_tagsfile, tagsfile])})
+        if g:onetags#debug_on | call s:Dbg('Start job: ' . cmd) | endif
+        let ft_entry.job = job_start([&shell, "-c", cmd], {"exit_cb": funcref("<SID>RefreshProjTagsDone", [ft, proj_dir, tmp_tagsfile, tagsfile])})
     endif
 endfunction
 
