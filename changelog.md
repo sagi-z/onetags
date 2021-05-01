@@ -1,5 +1,11 @@
 # Changelog (generated using GithubEngine)
 
+## Version 0.9.7 solved issues
+
+Issue 16: nvim support  
+Issue 15: Fix for large projects  
+Issue 14: Improve performance for large projects  
+
 ## Version 0.9.6 solved issues
 
 Issue 12: Bug in marker directory detection  
@@ -21,9 +27,12 @@ Issue 5: Errors if ctags is not installed
 
 Issue 4: Add project markers  
 Issue 3: Handle done callback of refresh tags in another buffer  
-Issue 2: Check if a file exists before trying to refresh its project tags  
-Issue 1: Random error messages after save file
+Issue 2: Check if a file exists before trying to refresh its project tags   
+
+## Version 0.9.2 solved issues
+
+Issue 1: Random error messages after save file  
 
 ## Contributors for these versions
 
-Sagi Zeevi
+Sagi Zeevi  
