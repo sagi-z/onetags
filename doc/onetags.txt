@@ -206,10 +206,19 @@ These commands are available:
 <
 
                               *:OnetagsProjReload*
-:OnetagsProjReload [ProjDir]  will rload the file ".onetags.json" in the 
-          {ProjDir}.The default {ProjDir} is the project directory of the
+:OnetagsProjReload [ProjDir]  will reload the file ".onetags.json" in the 
+          {ProjDir}. The default {ProjDir} is the project directory of the
           current file (|onetags-project-detection|). Use this to make the
-          changes you've made during |OnetagsProjCfg| take affect.
+          changes you've made during |OnetagsProjCfg| take affect for the
+          current buffer.
+
+
+                           *:OnetagsProjReloadAll*
+:OnetagsProjReloadAll  will reload the file ".onetags.json" in all the 
+          {ProjDir} for all buffers. The default {ProjDir} is the project
+          directory of the current file (|onetags-project-detection|). Use
+          this to make the changes you've made during |OnetagsProjCfg| take
+          affect in all opened buffers.
 
 
 =============================================================================

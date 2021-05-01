@@ -1,4 +1,4 @@
-" Last Change:	2021 April 3rd
+" Last Change:	2021 May 01
 " Maintainer:	Sagi Zeevi <sagi.zeevi@gmail.com>
 " License:      MIT
 
@@ -10,6 +10,8 @@ let g:loaded_onetags = 1
 " temporarily change compatible option
 let s:save_cpo = &cpo
 set cpo&vim
+
+let s:vnone = ''
 
 function! s:Dbg(msg)
     if g:onetags#debug_on
@@ -35,13 +37,20 @@ silent call mkdir(fnamemodify(g:onetags#tags_dir, ':p'), 'p')
 
 
 " Assert we're working with a filetype we can handle
-function! s:Filetype(ft='', throw=1)
-    let ft = a:ft
+function! s:Filetype(...)
+    let ft = ''
+    if a:0 >= 1
+		let ft = a:1
+	endif
+    let should_throw = 1
+    if a:0 >= 2
+		let should_throw = a:2
+	endif
     if ft == ''
         let ft = &l:filetype
     endif
     if ft == '' || ! has_key(g:onetags#ft2ctags, ft)
-        if a:throw
+        if should_throw
             throw 'Unsupported filetype "' . ft . '" for file '. expand('%:p')
         else
             let ft = ''
@@ -58,8 +67,11 @@ endfunction
 " the project dir.
 " Finally, the current directory can have a config file with external source to the 'file_dir'.
 " Otherwise we don't handle this file/dir.
-function! s:proj_dir.entry(file_dir='')
-    let file_dir = a:file_dir
+function! s:proj_dir.entry(...)
+    let file_dir = ''
+	if a:0 >= 1
+		let file_dir = a:1
+	endif
     if file_dir == ''
         let file_dir = expand('%:p:h')
     else
@@ -82,7 +94,7 @@ function! s:proj_dir.entry(file_dir='')
 
     " Check if this is an external source
     let proj_dir = s:projs_cfg.proj_of_external_source(file_dir)
-    if proj_dir isnot v:none
+    if proj_dir isnot s:vnone
         let self._data[file_dir] = proj_dir
         if g:onetags#debug_on | call s:Dbg('proj_dir for ' . file_dir . ' (external source) is ' . proj_dir) | endif
         return proj_dir
@@ -110,14 +122,14 @@ function! s:proj_dir.entry(file_dir='')
             if stridx(file_dir, global_proj_dir) == 0
                 let proj_dir = global_proj_dir
             else
-                let proj_dir = v:none
+                let proj_dir = s:vnone
             endif
         else
             " Never accepting $HOME
-            let proj_dir = v:none
+            let proj_dir = s:vnone
         endif
     endif
-    if proj_dir is v:none
+    if proj_dir is s:vnone
         throw 'No project detected for ' . file_dir
     endif
     let self._data[file_dir] = proj_dir
@@ -131,11 +143,15 @@ function! s:projs_cfg.remove(proj_dir)
 endfunction
 
 
-function! s:proj_dir.is_managed(file='')
-    if a:file == ''
+function! s:proj_dir.is_managed(...)
+	let file = ''
+	if a:0 >= 1
+		let file = a:1
+	endif
+    if file == ''
         let file = expand('%:p:h')
     else
-        let file = fnamemodify(a:file, '%:p:h')
+        let file = fnamemodify(file, '%:p:h')
     endif
     return has_key(self._data, file)
 endfunction
@@ -199,9 +215,17 @@ function! s:projs_cfg.autobuild_disabled(proj_dir, ft)
 endfunction
 
 
-function! s:projs_cfg.ft_entry(proj_dir='', ft='')
-    let ft = s:Filetype(a:ft)
-    let proj_dir = s:proj_dir.entry(a:proj_dir)
+function! s:projs_cfg.ft_entry(...)
+    let proj_dir = ''
+	if a:0 >= 1
+		let proj_dir = a:1
+	endif
+    let ft = ''
+	if a:0 >= 2
+		let ft = a:2
+	endif
+    let ft = s:Filetype(ft)
+    let proj_dir = s:proj_dir.entry(proj_dir)
     let proj_entry = self.entry(proj_dir)
     if has_key(proj_entry, ft)
         let ft_entry = proj_entry[ft]
@@ -247,23 +271,35 @@ function! s:projs_cfg.proj_of_external_source(file_dir)
             endif
         endfor
     endfor
-    return v:none
+    return s:vnone
 endfunction
 
 
-function! s:jobs.proj_entry(file_dir='')
-    let proj_dir = s:proj_dir.entry(a:file_dir)
+function! s:jobs.proj_entry(...)
+    let file_dir = ''
+	if a:0 >= 1
+		let file_dir = a:1
+	endif
+    let proj_dir = s:proj_dir.entry(file_dir)
     if ! has_key(self._data, proj_dir)
         let self._data[proj_dir] = {}
     endif
     return self._data[proj_dir]
 endfunction
 
-function! s:jobs.ft_entry(ft='', file_dir='')
-    let ft = s:Filetype(a:ft)
-    let proj_dir_entry = self.proj_entry(a:file_dir)
+function! s:jobs.ft_entry(...)
+    let ft = ''
+	if a:0 >= 1
+		let ft = a:1
+	endif
+    let file_dir = ''
+	if a:0 >= 2
+		let file_dir = a:2
+	endif
+    let ft = s:Filetype(ft)
+    let proj_dir_entry = self.proj_entry(file_dir)
     if ! has_key(proj_dir_entry, ft)
-        let proj_dir_entry[ft] = {'job': v:none, 'waiting': 0}
+        let proj_dir_entry[ft] = {'job': s:vnone, 'waiting': 0}
     endif
     return proj_dir_entry[ft]
 endfunction
@@ -283,13 +319,21 @@ function! s:tags_prefix.entry(proj_dir)
 endfunction
 
 
-function! s:Tagsfile(ft='', proj_dir='')
+function! s:Tagsfile(...)
+    let ft = ''
+	if a:0 >= 1
+		let ft = a:1
+	endif
+    let proj_dir = ''
+	if a:0 >= 2
+		let proj_dir = a:2
+	endif
     try
-        let ft = s:Filetype(a:ft)
+        let ft = s:Filetype(ft)
     catch /.*/
         return ''
     endtry
-    return fnamemodify(g:onetags#tags_dir, ':p:h') . '/' . ft . s:tags_prefix.entry(a:proj_dir) . '.tags'
+    return fnamemodify(g:onetags#tags_dir, ':p:h') . '/' . ft . s:tags_prefix.entry(proj_dir) . '.tags'
 endfunction
 
 
@@ -332,18 +376,18 @@ function! s:CtagsExternalCommand(ft, tagsfile, directory)
 endfunction
 
 
-function! s:RefreshProjTagsDone(ft, proj_dir, tmp_tagsfile, tagsfile, msg, exitval)
+function! s:RefreshProjTagsDone(cmd, ft, proj_dir, tmp_tagsfile, tagsfile, ...)
     if g:onetags#debug_on | call s:Dbg('RefreshProjTagsDone()') | endif
+    let exitval = a:2
     let ft_entry = s:jobs.ft_entry(a:ft, a:proj_dir)
-    if a:exitval != 0
-        let info = job_info(ft_entry.job)
-        echoerr 'Job "' . string(info.cmd) . '" failed with error "' . info.exitval . '"'
+    if exitval != 0
+        echoerr 'Job "' . string(a:cmd) . '" failed with error "' . exitval . '"'
         call delete(a:tmp_tagsfile)
     else
         if g:onetags#debug_on | call s:Dbg('rename(' . a:tmp_tagsfile . ', ' . a:tagsfile . ')') | endif
         call rename(a:tmp_tagsfile, a:tagsfile)
     endif
-    let ft_entry.job = v:none
+    let ft_entry.job = s:vnone
     if ft_entry.waiting
         let ft_entry.waiting = 0
         call s:RefreshProjTags(a:ft, a:proj_dir)
@@ -351,12 +395,20 @@ function! s:RefreshProjTagsDone(ft, proj_dir, tmp_tagsfile, tagsfile, msg, exitv
 endfunction
 
 
-function! s:RefreshProjTags(ft='', proj_dir='')
+function! s:RefreshProjTags(...)
+    let ft = ''
+	if a:0 >= 1
+		let ft = a:1
+	endif
+    let proj_dir = ''
+	if a:0 >= 2
+		let proj_dir = a:2
+	endif
     if g:onetags#debug_on | call s:Dbg('RefreshProjTags invoked.') | endif
-    let ft = s:Filetype(a:ft)
-    let proj_dir = s:proj_dir.entry(a:proj_dir)
-    let ft_entry = s:jobs.ft_entry(a:ft, proj_dir)
-    if ft_entry.job isnot v:none
+    let ft = s:Filetype(ft)
+    let proj_dir = s:proj_dir.entry(proj_dir)
+    let ft_entry = s:jobs.ft_entry(ft, proj_dir)
+    if ft_entry.job isnot s:vnone
         let ft_entry.waiting = 1
         if g:onetags#debug_on | call s:Dbg('Another ctags is running for this filetype, will rerun automatically when it is done.') | endif
         return
@@ -366,15 +418,27 @@ function! s:RefreshProjTags(ft='', proj_dir='')
     let cmd = s:CtagsProjCommand(ft, tmp_tagsfile, proj_dir)
     if ! empty(cmd)
         if g:onetags#debug_on | call s:Dbg('Start job: ' . cmd) | endif
-        let ft_entry.job = job_start([&shell, "-c", cmd], {"exit_cb": funcref("<SID>RefreshProjTagsDone", [ft, proj_dir, tmp_tagsfile, tagsfile])})
+        if exists('*job_start')
+            let ft_entry.job = job_start([&shell, "-c", cmd], {"exit_cb": funcref("<SID>RefreshProjTagsDone", [cmd, ft, proj_dir, tmp_tagsfile, tagsfile])})
+        else
+            let ft_entry.job = jobstart([&shell, "-c", cmd], {"on_exit": funcref("<SID>RefreshProjTagsDone", [cmd, ft, proj_dir, tmp_tagsfile, tagsfile])})
+        endif
     endif
 endfunction
 
 
-function! s:RefreshExternalTags(ft='', proj_dir='')
+function! s:RefreshExternalTags(...)
+    let ft = ''
+	if a:0 >= 1
+		let ft = a:1
+	endif
+    let proj_dir = ''
+	if a:0 >= 2
+		let proj_dir = a:2
+	endif
     if g:onetags#debug_on | call s:Dbg('RefreshExternalTags invoked.') | endif
-    let ft = s:Filetype(a:ft, 0)
-    let proj_dir = s:proj_dir.entry(a:proj_dir)
+    let ft = s:Filetype(ft, 0)
+    let proj_dir = s:proj_dir.entry(proj_dir)
     if empty(ft)
         let fts = []
         for [ft, ft_entry] in items(s:projs_cfg.entry(proj_dir))
@@ -408,8 +472,12 @@ function! s:RefreshExternalTags(ft='', proj_dir='')
 endfunction
 
 
-function! s:ProjSettings(proj_dir='')
-    let proj_file = s:proj_dir.entry(a:proj_dir) . '/' . '.onetags.json'
+function! s:ProjSettings(...)
+    let proj_dir = ''
+	if a:0 >= 1
+		let proj_dir = a:1
+	endif
+    let proj_file = s:proj_dir.entry(proj_dir) . '/' . '.onetags.json'
     try
         exe "b " . proj_file
     catch /.*/
@@ -462,10 +530,21 @@ function! s:SetTags()
 endfunction
 
 
-function! s:ProjReload(proj_dir='')
-    let proj_dir = s:proj_dir.entry(a:proj_dir)
+function! s:ProjReload(...)
+    let proj_dir = ''
+	if a:0 >= 1
+		let proj_dir = a:1
+	endif
+    let proj_dir = s:proj_dir.entry(proj_dir)
     call s:projs_cfg.remove(proj_dir)
     call s:SetTags()
+endfunction
+
+
+function! s:ProjReloadAll()
+    let bnum = buffer_number()
+    exe "bufdo OnetagsProjReload"
+    exe "b " . bnum
 endfunction
 
 
@@ -515,6 +594,9 @@ if !exists(":OnetagsProjCfg")
 endif
 if !exists(":OnetagsProjReload")
     command -nargs=?  OnetagsProjReload  :call <SID>ProjReload(<q-args>)
+endif
+if !exists(":OnetagsProjReloadAll")
+    command -nargs=0  OnetagsProjReloadAll  :call <SID>ProjReloadAll()
 endif
 
 
